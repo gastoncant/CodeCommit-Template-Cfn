@@ -1,0 +1,43 @@
+#comenta este archivo de manera descriptiva
+
+services: 
+  db: #nombre del servicio de la base de datos
+    image: postgres:15.5-alpine3.19
+    container_name: postgres 15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: odoo
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+      - .db_config/:/db_config/
+  
+  odoo: #nombre del servicio
+    container_name: odoo 15
+    image: odoo:15.0
+    volumes: #Persistencia de datos
+      - odoo-data:/var/lib/odoo
+      - ./config:/etc/odoo
+      - ./addons:/mnt/extra-addons
+    ports:
+      - "8069:8069"
+    
+    depends_on: #dependencias
+      - db
+  pgadmin: #config de pgadmin
+    container_name: pgadmin 5
+    image: dpage/pgadmin4:5.7
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    
+volumes: #volumenes
+  odoo-data:
+  odoo-db-data:
+  pgadmin-data:

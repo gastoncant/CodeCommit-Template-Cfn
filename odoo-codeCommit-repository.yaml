@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: AWS CloudFormation Odoo template for track0 Odoo (tag:odoo-CodeCommit-repository-track0).
+
+Parameters: #CF user input parameters, including name, REGEX, type, description, and default value
+  OdooCodeCommitRepository:
+    Type: String
+    Description: Repository for track0 Odoo
+    Default: RepositoryName1
+    AllowedPattern: ^[a-zA-Z0-9_-]{1,100}$
+    ConstraintDescription: 'The repository name must be 1-100 characters long and contain only letters, numbers, hyphens, and underscores'
+
+  UserPassword:
+    Type: String
+    AllowedPattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$ 
+    NoEcho: true
+    Description: 'IAM user password for Odoo repository access'
+    ConstraintDescription: 'The password must be 8 length size minimum characters, including lower case, upper case, one number and one symbol'
+
+Resources: #AWS resources to be created
+  OdooRepository: #Odoo repository for track0
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref OdooCodeCommitRepository
+      RepositoryDescription: 'Repository for track0 Odoo'
+  
+  IAMPolicy: #IAM access policies for Odoo repository
+    Type: 'AWS::IAM::Policy'
+    Properties: 
+      PolicyName: CFNUsersPolicies
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - "codecommit:GitPull"
+              - "codecommit:GitPush"
+              - "codecommit:ListBranches"
+              - "codecommit:GetBranch"
+              - "codecommit:DeleteBranch"
+              - "codecommit:MergeBranchesByThreeWay"
+              - "codecommit:MergeBranchesBySquash"
+              - "codecommit:MergeBranchesByFastForward"
+              - "codecommit:ListRepositories"
+              - "codecommit:CreateCommit"
+              - "codecommit:CreatePullRequest"
+              - "codecommit:GetBlob"
+              - "codecommit:GetCommit"
+              - "codecommit:GetTree"
+              - "codecommit:GetRepository"
+              - "codecommit:GetObjectIdentifier"
+              - "codebuild:ListProjects"
+              - "codecommit:GetComment"
+              - "codecommit:GetCommitHistory"
+              - "codecommit:GetDifferences"
+              - "codecommit:GetMergeCommit"
+              - "codecommit:GetMergeConflicts"
+              - "codecommit:GetMergeOptions"
+              - "codecommit:GetCommentReactions"
+              - "codecommit:ListPullRequests"
+              - "codecommit:GetFolder"
+              - "codecommit:GetFile"
+              - "codecommit:GetReferences"
+            Resource: !GetAtt OdooRepository.Arn
+      Users:
+        - !Ref IAMUser
+
+  IAMUser: 
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: OdooDevUser
+      LoginProfile:
+        Password: !Ref UserPassword
+  
+Outputs:
+  OdooRepositoryOutput: #Odoo return values
+    Description: 'Repository for track0 Odoo'
+    Value: !Ref OdooRepository
+    Export:
+      Name: !Sub '${AWS::StackName}-OdooRepository'
+  HTTPSURL: #HTTPS URL used to clone the Odoo repository
+    Description: 'HTTPS URL for track0 Odoo repository'
+    Value: !GetAtt OdooRepository.CloneUrlHttp
+    Export:
+      Name: !Sub '${AWS::StackName}-OdooRepositoryHTTPSURL'
+  SSHURL: #SSH URL used to clone the Odoo repository
+      Description: 'SSH URL for track0 Odoo repository'
+      Value: !GetAtt OdooRepository.CloneUrlSsh
+      Export:
+        Name: !Sub '${AWS::StackName}-OdooRepositorySSHURL'
+  OdooRepositoryUser:
+    Description: 'IAM user for Odoo repository'
+    Value: !Ref IAMUser
+    Export:
+      Name: !Sub '${AWS::StackName}-OdooDevUser'
